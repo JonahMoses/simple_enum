@@ -65,7 +65,7 @@ class MongoidTest < MiniTest::Unit::TestCase
   end
 
   def test_issue_55_that_initialization_with_hash_works
-    skil('Only available in mongoid') unless mongoid?
+    skip('Only available in mongoid') unless mongoid?
     dummy = Dummy.new(issue55: :default)
     assert_equal 0, dummy.issue55_cd
     assert_equal :default, dummy.issue55
