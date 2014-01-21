@@ -27,7 +27,7 @@ class MongoidTest < MiniTest::Unit::TestCase
 
     gender_field = klass.new.fields['gender_cd']
     refute_nil gender_field
-    assert_equal 1, gender_field.default
+    assert_equal 1, gender_field.default_val
     assert_equal klass.fields['verify'].class, gender_field.class
     assert_equal :female, klass.new.gender
   end
@@ -62,5 +62,12 @@ class MongoidTest < MiniTest::Unit::TestCase
     refute_nil klass.new.fields['gender_cd']
     assert_equal String, klass.new.fields['gender_cd'].options[:type]
     assert_equal "0", klass.new.fields['gender_cd'].options[:default]
+  end
+
+  def test_issue_55_that_initialization_with_hash_works
+    skil('Only available in mongoid') unless mongoid?
+    dummy = Dummy.new(issue55: :default)
+    assert_equal 0, dummy.issue55_cd
+    assert_equal :default, dummy.issue55
   end
 end

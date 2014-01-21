@@ -1,4 +1,4 @@
-require 'mongoid/version'
+require 'mongoid'
 require 'simple_enum/mongoid'
 
 def orm_version
@@ -8,7 +8,7 @@ end
 def setup_db
   # create database connection
   Mongoid.configure do |config|
-    config.master = Mongo::Connection.new('localhost').db("simple-enum-test-suite")
+    config.connect_to 'simple-enum-test-suite'
     config.use_utc = true
     config.include_root_in_json = true
   end
@@ -17,12 +17,9 @@ end
 
 # Reload database
 def reload_db(options = {})
-
-  # clear collections except system
-  Mongoid.master.collections.select do |collection|
-    collection.name !~ /system/
-  end.each(&:drop)
-
+  Mongoid.default_session[:dummies].try(:drop)
+  Mongoid.default_session[:computers].try(:drop)
+  Mongoid.default_session[:genders].try(:drop)
   fill_db(options)
 end
 
@@ -31,14 +28,14 @@ def anonymous_dummy(&block)
   Class.new do
     include Mongoid::Document
     include SimpleEnum::Mongoid
-    self.collection_name = 'dummies'
+    store_in collection: 'dummies'
     instance_eval &block
   end
 end
 
 def extend_computer(current_i18n_name = "Computer", &block)
   Class.new(Computer) do
-    self.collection_name = 'computers'
+    store_in collection: 'computers'
     instance_eval &block
     instance_eval <<-RUBY
       def self.model_name; MockName.mock!(#{current_i18n_name.inspect}) end
@@ -48,7 +45,7 @@ end
 
 def extend_dummy(current_i18n_name = "Dummy", &block)
   Class.new(Dummy) do
-    self.collection_name = 'dummies'
+    store_in collection: 'dummies'
     instance_eval &block
     instance_eval <<-RUBY
       def self.model_name; MockName.mock!(#{current_i18n_name.inspect}) end
@@ -65,7 +62,7 @@ def named_dummy(class_name, &block)
       include Mongoid::Document
       include SimpleEnum::Mongoid
 
-      self.collection_name = 'dummies'
+      store_in collection: 'dummies'
       instance_eval &block
     end
 
@@ -79,11 +76,12 @@ class Dummy
   include SimpleEnum::Mongoid
 
   as_enum :gender, [:male, :female]
-  as_enum :word, { :alpha => 'alpha', :beta => 'beta', :gamma => 'gamma'}
+  as_enum :word, { :alpha => 'alpha', :beta => 'beta', :gamma => 'gamma' }
   as_enum :didum, [ :foo, :bar, :foobar ], :column => 'other'
   as_enum :role, [:admin, :member, :anon], :strings => true
   as_enum :numeric, [:"100", :"3.14"], :strings => true
   as_enum :nilish, [:nil], :strings => true
+  as_enum :issue55, default: 0, another: 1
 
   before_save :check_typed
 
